@@ -4,33 +4,41 @@ import {
   FacebookTrackingSoftware,
   GoogleTrackingSoftware
 } from 'features/tracking/software';
-import { TrackingSoftware } from 'features/tracking/tracking.types';
+import { TrackingSoftware, InitializeTrackingSoftware } from 'features/tracking/tracking.types';
 
 export interface TrackingState {
   trackingSoftwares: TrackingSoftware[];
+  initializedTrackingSoftwares: InitializeTrackingSoftware[];
   trackEvent: (eventName: string, location: string) => void;
 }
 
 const TrackingContext = createContext<TrackingState | undefined>(undefined);
 
 export const TrackingProvider: FC = ({ children }) => {
-  const [trackingSoftwares] = useState([
+  const [trackingSoftwares] = useState([new GoogleTrackingSoftware()]);
+  const [initializedTrackingSoftwares] = useState([
     new AmplitudeTrackingSoftware(),
-    new FacebookTrackingSoftware(),
-    new GoogleTrackingSoftware()
+    new FacebookTrackingSoftware()
   ]);
 
   const value = useMemo(
     () => ({
       trackingSoftwares,
-      trackEvent: (eventName: string, location: string) =>
-        trackingSoftwares.forEach((trackingSoftware) => {
+      initializedTrackingSoftwares,
+      trackEvent: (eventName: string, location: string) => {
+        trackingSoftwares.forEach((trackingSoftwares) => {
           // Why do we initialize every service ?? if google doesn't require initialization
-          trackingSoftware.initialize();
-          trackingSoftware.trackEvent(eventName, location);
-        })
+          trackingSoftwares.trackEvent(eventName, location);
+          console.log(eventName);
+        });
+        initializedTrackingSoftwares.forEach((initializedTrackingSoftwares) => {
+          // Why do we initialize every service ?? if google doesn't require initialization
+          initializedTrackingSoftwares.initialize();
+          initializedTrackingSoftwares.trackEvent(eventName, location);
+        });
+      }
     }),
-    [trackingSoftwares]
+    [trackingSoftwares, initializedTrackingSoftwares]
   );
 
   return <TrackingContext.Provider value={value}>{children}</TrackingContext.Provider>;
